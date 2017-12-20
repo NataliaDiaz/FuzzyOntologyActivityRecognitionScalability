@@ -1,0 +1,43 @@
+
+% Variables
+
+(define-concrete-feature our_Health *real* 0 100)
+(define-concrete-feature enemy_Health *real* 0 100)
+(define-concrete-feature aggressiveness *integer* 0 4)
+
+% Linguistic labels
+
+(define-fuzzy-concept Our_Near_Death left-shoulder(0,100,0,50) )
+(define-fuzzy-concept Our_Good triangular(0,100,14,50,83) )
+(define-fuzzy-concept Our_Excellent right-shoulder(0,100,50,100) )
+
+(define-fuzzy-concept Enemy_Near_Death left-shoulder(0,100,0,50) )
+(define-fuzzy-concept Enemy_Good triangular(0,100,14,50,83) )
+(define-fuzzy-concept Enemy_Excellent right-shoulder(0,100,50,100) )
+
+(define-fuzzy-concept Run_Away  crisp(0,4,1,1) )
+(define-fuzzy-concept Fight_Defensively crisp(0,4,2,2) )
+(define-fuzzy-concept All_Out_Attack crisp(0,4,3,3) )
+
+% Rules Mamdami rule encoding
+
+(define-concept Rule0 (g-and (some our_Health Our_Near_Death) (some enemy_Health Enemy_Near_Death) (some aggressiveness Fight_Defensively)))
+(define-concept Rule1 (g-and (some our_Health Our_Near_Death) (some enemy_Health Enemy_Good) (some aggressiveness Run_Away)))
+(define-concept Rule2 (g-and (some our_Health Our_Near_Death) (some enemy_Health Enemy_Excellent) (some aggressiveness Run_Away)))
+(define-concept Rule3 (g-and (some our_Health Our_Good) (some enemy_Health Enemy_Near_Death) (some aggressiveness All_Out_Attack)))
+(define-concept Rule4 (g-and (some our_Health Our_Good) (some enemy_Health Enemy_Good) (some aggressiveness Fight_Defensively)))
+(define-concept Rule5 (g-and (some our_Health Our_Good) (some enemy_Health Enemy_Excellent) (some aggressiveness Fight_Defensively)))
+(define-concept Rule6 (g-and (some our_Health Our_Excellent) (some enemy_Health Enemy_Near_Death) (some aggressiveness All_Out_Attack)))
+(define-concept Rule7 (g-and (some our_Health Our_Excellent) (some enemy_Health Enemy_Good) (some aggressiveness All_Out_Attack)))
+(define-concept Rule8 (g-and (some our_Health Our_Excellent) (some enemy_Health Enemy_Excellent) (some aggressiveness Fight_Defensively)))
+
+(define-concept Rules (g-or Rule0 Rule1 Rule2 Rule3 Rule4 Rule5 Rule6 Rule7 Rule8 ) )
+
+
+% Facts
+(instance facts (= our_Health 90) )
+(instance facts (= enemy_Health 20) )
+
+
+% Defuzzification
+(defuzzify-lom? Rules facts aggressiveness)
