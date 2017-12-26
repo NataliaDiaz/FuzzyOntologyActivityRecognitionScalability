@@ -1,0 +1,280 @@
+% Logic for desired semantics: Zadeh or Lukasiewicz 
+(define-fuzzy-logic zadeh)
+
+% Extras
+(define-truth-constant totally 1.0)
+(define-truth-constant very 0.8)
+(define-truth-constant quite 0.7)
+(define-truth-constant moderately 0.6)
+(define-truth-constant enough 0.4)
+(define-truth-constant little 0.2)
+
+
+% Concepts and Relations 
+(define-primitive-concept User *top* )
+(define-primitive-concept Object *top* )  %disjunctive?
+(define-primitive-concept Spoon Object)
+(define-primitive-concept Fork Object)
+(define-primitive-concept Knife Object)
+(define-primitive-concept Location *top*)
+(define-primitive-concept Phone Object)
+(define-primitive-concept Service *top*)
+(define-primitive-concept TurnOffAllElectricitySwitches Service)
+(define-primitive-concept WeatherSituation *top*)
+(define-primitive-concept WeatherSituationTurku WeatherSituation)
+(define-primitive-concept MeetingRoom Room)
+(define-primitive-concept InmunoDefenseLevel *top* ) % Only for crisp case
+
+
+%(functional performsActivity)
+(functional hasPhone)
+(functional isInLocation)
+(functional isNearTo)
+(functional isUsingObject)
+(functional atHousehold)
+%(functional hasOcupancyStatus)
+
+(range performsAction Action)
+(domain performsAction User)
+(range atHousehold Location)
+(domain atHousehold TurnOffAllElectricitySwitches)
+(range hasCurrentStatus Status)
+(domain hasCurrentStatus User)
+(range isUsingObject Object)
+(domain isUsingObject User)
+(range isNearTo Location)
+(domain isNearTo User)
+(range hasPhone Phone)
+(domain hasPhone User)
+(range isInLocation Location)
+(domain isInLocation User)
+(range hasStatus Status)
+(domain hasStatus Device)
+(range hasProjector Projector)
+(domain hasProjector Location)
+(range hasLights Light)
+(domain hasLights Location)
+%(range hasOcupancyStatus Status)
+%(domain hasOcupancyStatus Room)
+
+(define-primitive-concept Room Location)
+(define-primitive-concept Projector Device)
+(define-primitive-concept Light Device)
+(define-primitive-concept Status *top*)
+%(define-primitive-concept HoldingAMeeting Status)    % ok to have ind and conc in the consequ?
+%(instance HoldingAMeeting Status)
+(define-primitive-concept ON Status)
+(instance Off Status)
+
+% IN CRISP CASE ALL INSTANTIATIONS HAVE DEGREE OF TRUTH 1 
+(instance NataliaC User 1.0)
+(instance Robin User 1.0)
+(instance Ana User 1.0 )
+(instance Wiktor User 1.0 )
+(instance JohanLiliusOffice Location 1.0)
+
+(instance user0 User)
+(instance user1 User)
+(instance user2 User)
+(instance user3 User)
+(instance user4 User)
+(instance user5 User)
+(instance user6 User)
+(instance user7 User)
+(instance user8 User)
+(instance user9 User)
+
+(related Natalia Spoon isUsingObject ) 
+(related Natalia Fork isUsingObject )
+(related Natalia Plate isUsingObject )
+
+% Instancias para que se dispare la regla
+%(related Natalia NataliasGCalendar ownsCalendar )
+(related Natalia NataliasAppartment hasHome )
+(related Ana AnasPhone hasPhone )
+(related AnasPhone loc isInLocation 0.0 ) % THIS BECOMES DISABLED ASSUMING UNCERTAINTY -TRANSFORMING FROM THE FUZZY CASE- (related AnasPhone loc isInLocation 0.8 )
+(related loc liliusOffice isNearTo  )
+(instance liliusOffice JohanLiliusOffice  )
+
+(instance openCupboard OpenCupboard 1.0)
+(instance turnCoffeeMachineOn TurnCoffeeMachineOn 1.0)
+(instance moveCoffeeJar MoveCoffeeJar 1.0)
+(instance openFridge OpenFridge 1.0)
+
+(related Wictor openCupboard performsAction )
+(related Wictor turnCoffeeMachineOn performsAction )
+(related Wictor moveCoffeeJar performsAction )
+(related Wictor openFridge performsAction )   % VS CRISP: if one action is not recognized?
+
+(instance ADARoom MeetingRoom 0.0)  % THIS BECOMES DISABLED ASSUMING UNCERTAINTY -TRANSFORMING FROM THE FUZZY CASE- (instance ADARoom MeetingRoom 0.7)
+(instance projectorA Projector ) % Needed?
+%(instance light Light 1.0)
+(related ADARoom light hasLights 1.0)
+(related ADARoom projectorA hasProjector 1.0)
+(related projectorA On hasStatus 1.0)
+(related light On hasStatus 1.0)
+
+(instance useSpoon UseSpoon 1.0)
+(instance useFork UseFork 1.0)
+(instance usePlate UsePlate 1.0)
+(instance useKnife UseKnife 1.0)
+
+(related Robin useSpoon performsAction )
+(related Robin useFork performsAction )
+(related Robin usePlate performsAction ) % ENOUGH TO DETECT LUNCH ACTION
+%(related Robin useKnife performsAction ) 
+%(related Robin useBottle performsAction )  
+
+(instance exitOffice ExitOffice 1.0)
+(instance exitCorridor ExitCorridor 1.0)
+(instance useStick UseStick 1.0)
+(instance openStorageRoom OpenStorageRoom 1.0)
+
+(related Natalia exitOffice performsAction 0.0) % THIS BECOMES DISABLED ASSUMING UNCERTAINTY -TRANSFORMING FROM THE FUZZY CASE-  (related Natalia exitOffice performsAction 0.6)
+(related Natalia exitCorridor performsAction 1.0)
+(related Natalia openStorageRoom performsAction 1.0) 
+(related Natalia useStick performsAction 1.0)  % 0.0 = Not executed
+
+
+(instance On ON 0.5) % Extra
+
+% RULES %%%%%%%%%%% We assume each rule has associated a specific time-window where the actions need to be detected.
+
+(define-concept antecedent1 (and User (some performsAction MakeCoffee)))
+(define-concept MakeCoffee (and OpenCupboard TurnCoffeeMachineOn MoveCoffeeJar OpenFridge))
+(define-concept consequent1 (and User (some performsActivity MakingCoffee)))
+
+%(define-concept antecedent2 (and MeetingRoom (and (some hasLights (some hasStatus On)) (some hasProjector (some hasStatus On)))))  % Does not work if On is not a Concept!
+(define-concept antecedent2 (and MeetingRoom (some hasLights (some hasStatus ON)) ))
+(define-concept consequent2 (and MeetingRoom (some hasOcupancyStatus HoldingAMeeting)))
+
+(define-concept antecedent3 (and User (some performsAction Lunch)))
+(define-concept Lunch (and UseBottle UsePlate UseFork UseSpoon UseKnife))
+(define-concept consequent3 (and User (some performsActivity HaveLunch)))
+
+% change of order and omitting actions to detect lower degree of truth and consequently changes in behaviour through skipped actions.
+(define-concept antecedent4 (and User (some performsAction Keppijumpa)))
+(define-concept Keppijumpa (and ExitOffice ExitCorridor OpenStorageRoom UseStick)) % how to express same action twice?
+(define-concept consequent4 (and User (some performsActivity DoStretching)))
+
+(define-concept antecedent5 (and User (some hasPhone (some isInLocation (some isNearTo JohanLiliusOffice)))))
+(define-concept consequent5 (and User (some performsActivity MeetingSupervisor)))
+
+
+% If they do not allow a subject, this can be added to the feature name. E.g. NataliaHasAvgSleepQuality. Is there a better workaround? 2 definitions of feature.
+%(define-concrete-feature hasAvgSleepQuality *real* 0.0 20.0 )
+%(define-concrete-feature didAvgNSteps *integer* 0 50000 )
+%(define-concrete-feature hasInmunoDefenseLevel *integer* 0 10)
+(functional hasAvgSleepQuality)   % Having these both declarations of crisp concepts produces: Error: Role hasAvgSleepQuality cannot be concrete and abstract.
+(functional didAvgNSteps)
+(functional hasInmunoDefenseLevel)
+(range hasAvgSleepQuality *real* 0.0 20.0 )
+(range didAvgNSteps *integer* 0 50000 )
+%(range hasInmunoDefenseLevel *integer* 0 10)
+(range hasInmunoDefenseLevel InmunoDefenseLevel)
+(domain hasInmunoDefenseLevel User)
+
+(define-fuzzy-concept VeryStormy triangular (0, 300, 50,100,150))
+(define-fuzzy-concept lowTemperature left-shoulder(-100.0, 200.0, -10.0, 0.0) )
+(define-fuzzy-concept largeCapacity right-shoulder(0.0, 1000000.0, 20.0, 100.0) )
+(define-fuzzy-concept mediumLighting trapezoidal(0.0, 20000.0, 150.0, 250.0, 500.0, 750.0) )
+(define-fuzzy-concept highTemperature right-shoulder(-100.0, 200.0, 15.0, 25.0) )
+%(define-fuzzy-concept lowInmunoDefenseLevelCrisp left-shoulder(0, 10, 0, 5) )
+%(define-fuzzy-concept badSleepQualityCrisp left-shoulder(0.0, 20, 4.0, 5.0) )
+%(define-fuzzy-concept highNStepsCrisp right-shoulder(0, 50000, 7000, 10000) )
+%(define-fuzzy-concept lowNSteps left-shoulder(0, 50000, 2000, 2500) )
+
+% --> CRISP EQUIVALENTS:
+%(define-concept lowInmunoDefenseLevelCrisp (<= hasInmunoDefenseLevel 5))
+%(define-concept badSleepQualityCrisp (<= hasInmunoDefenseLevel 5.0))
+%(define-concept highNStepsCrisp (>= didAvgNSteps 7000))
+%(define-concept lowNStepsCrisp (<= didAvgNSteps 2500))
+(instance lowInmunoDefenseLevelCrisp InmunoDefenseLevel)  % CAN HAVE A HARDCODED VALUE. e.g. (instance lowInmunoDefenseLevelCrisp (= hasValue 6))
+
+
+(define-modifier very linear-modifier(0.85) )
+(define-modifier barely linear-modifier(0.15) )
+(define-concept veryLowTemperature ( very lowTemperature ) )
+(define-concept veryHighTemperature ( very highTemperature ) )
+(define-concept veryLargeCapacity ( very largeCapacity ) )
+%(define-concept veryLowInmunoDefenseLevel ( very lowInmunoDefenseLevel ) )
+%(define-concept veryHighNSteps ( very nStepsHigh ) )
+%(define-concept veryBadSleepQuality ( very badSleepQuality ) )
+
+%If sleepQuality is very bad and step numbers is low and stress is high then inmunodefense is low
+%(define-concept antecedent6 (and (some hasAvgSleepQuality badSleepQualityCrisp) (some didAvgNSteps highNStepsCrisp)))
+(define-concept antecedent6 (and (<= hasAvgSleepQuality 5 ) (>=  didAvgNSteps 7000)))  %  HARDCODED THRESHOLD VALUES IN CRISP CASE
+(define-concept consequent6 (and User (some hasInmunoDefenseLevel lowInmunoDefenseLevelCrisp)))
+
+
+%(define-concept antecedent7 (and (some hasAvgSleepQuality badSleepQualityCrisp) (some didAvgNSteps lowNStepsCrisp)))
+(define-concept antecedent7 (and (<= hasAvgSleepQuality 5) (<= didAvgNSteps 2500)))
+(define-concept consequent7 (and User (some hasInmunoDefenseLevel lowInmunoDefenseLevelCrisp)))
+
+% Implicative Rule (it could be replaced by a Mamdani Rule)
+(define-concept Rule1 (implies antecedent1 consequent1 ) )
+(define-concept Rule2 (implies antecedent2 consequent2 ) )
+(define-concept Rule3 (implies antecedent3 consequent3 ) )
+(define-concept Rule4 (implies antecedent4 consequent4 ) )  
+(define-concept Rule5 (implies antecedent5 consequent5 ) )
+(define-concept Rule6 (implies antecedent6 consequent6 ) )
+(define-concept Rule7 (implies antecedent7 consequent7 ) )
+
+% In a first step we calculate x = (max-instance? Rule3)
+%(max-instance? Ana Rule3)
+%(all-instances? Rule1)
+%(all-instances? Rule2)
+%(all-instances? Rule3)
+%(all-instances? Rule4)
+%(all-instances? Rule5)
+%(all-instances? Rule6)
+%(all-instances? Rule7)
+
+% In a second step we add the axiom (instance Ana Rule3 x)
+(instance Wictor Rule1)
+(instance ADARoom Rule2)
+(instance Robin Rule3)  % comment
+(instance Natalia Rule4) % required to give positive in  (min-instance? Natalia (some performsActivity DoStretching)). Otherwise it gives >=0, but it is >= 0.4
+(instance Ana Rule5)
+(instance facts1 Rule6)
+(instance facts Rule7)
+
+
+
+% Is the KB satisfiable?
+(sat?)
+
+% We do not use min-sat, but the minimal degree to which an instance belongs to certain concept
+(min-instance? Wictor (some performsActivity MakingCoffee))
+%(min-instance? Wictor Rule1 )
+(min-instance? ADARoom (some hasOcupancyStatus HoldingAMeeting))
+%(min-instance? ADARoom Rule2 )
+(min-instance? Robin (some performsActivity HaveLunch))
+%(min-instance? Robin Rule3 )
+(min-instance? Natalia (some performsActivity DoStretching))
+%(min-instance? Natalia Rule4 )
+(min-instance? Ana (some performsActivity MeetingSupervisor) )
+%(min-instance? Ana Rule5 )
+%(min-instance? Natalia (some hasInmunoDefenseLevel lowInmunoDefenseLevelCrisp) )
+%(min-instance? Natalia Rule6 )
+
+(define-concept Rules (or Rule6 Rule7 ) )   % IN CRISP CASE WE USE OR INSTEAD OF G-OR
+% Facts  % IN CRISP CASE ALL THE DEGREES OF TRUTH ARE 1
+(instance facts (= hasAvgSleepQuality 3.0))
+(instance facts (= didAvgNSteps 19000))
+(instance facts1 (= hasAvgSleepQuality 4) 1)
+(instance facts1 (= didAvgNSteps 2000) 1)
+
+(instance Mikael (= hasAvgSleepQuality 3 ) )
+(instance Mikael (= didAvgNSteps 10000 ) )
+
+%(instance badSleepQuality BadSleepQuality 1.0)
+%(instance highNSteps HighNSteps 1.0)
+%(related Natalia 3 hasAvgSleepQuality 1.0)  % error: encountered "" at column 1, was expecting one of:
+%(related Natalia 10000 didAvgNSteps 1.0)
+
+%(min-instance? facts (some hasInmunoDefenseLevel lowInmunoDefenseLevel))
+%(min-instance? facts1 (some hasInmunoDefenseLevel lowInmunoDefenseLevel))
+(min-instance? facts Rule6)
+(min-instance? facts Rule7)
+(min-instance? facts Rules)

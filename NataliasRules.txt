@@ -1,0 +1,75 @@
+% Desired logic for desired semantics: Zadeh or Lukasiewicz 
+(define-fuzzy-logic zadeh)
+
+% Concepts and Relations 
+(define-primitive-concept User *top* )
+(define-primitive-concept Object *top* )  %disjunctive?
+(define-primitive-concept Spoon Object)
+(define-primitive-concept Fork Object)
+(define-primitive-concept Knife Object)
+(define-primitive-concept Location *top*)
+(define-primitive-concept Phone Object)
+
+(functional performsActivity)
+(functional hasPhone)
+(functional isInLocation)
+%(functional isNearTo)
+%(functional isUsingObject)
+(range hasCurrentStatus Status)
+(domain hasCurrentStatus User)
+(range isUsingObject Object)
+(domain isUsingObject User)
+(range isNearTo Location)
+(domain isNearTo User)
+(range hasPhone Phone)
+(domain hasPhone User)
+(range isInLocation Location)
+(domain isInLocation User)
+
+
+(instance Natalia User 1.0)
+(instance Robin User 1.0)
+(instance JohanLiliusOffice Location 1.0)
+
+(related Natalia Spoon isUsingObject 0.8)
+(related Natalia Fork isUsingObject 0.3)
+(related Natalia Plate isUsingObject 0.7)
+
+(related Robin Spoon isUsingObject 0.2)
+(related Robin Fork isUsingObject 0.9)
+(related Robin Plate isUsingObject 0.5)
+
+%(related Natalia NataliasGCalendar ownsCalendar 1.0)
+
+
+% Instancias para que se dispare la regla
+(instance Ana Ci 0.8 )
+(related Ana a1 hasPhone 0.8 )
+(related a1 a2 isInLocation 0.8 )
+(related a2 a3 isNearTo 0.8 )
+(instance a3 JohanLiliusOffice 0.8 )
+
+% Se pueden añadir conjuntivamente otros antecedentes Ci
+(define-concept antecedent3 (g-and Ci (some hasPhone (some isInLocation (some isNearTo JohanLiliusOffice)))) )
+
+% Se pueden añadir conjuntivamente otros consecuentes Di
+(define-concept consequent3 (g-and Di (some performsActivity MeetingSupervisor)))
+(define-concept consequent4 (g-and Ci (some performsActivity MeetingSupervisor)))
+
+
+% Regla implicativa, podría reemplazarse por una regla Mamdani
+(define-concept Rule3 (l-implies antecedent3 consequent3 ) )
+(define-concept Rule4 (l-implies antecedent3 consequent4 ) )  
+
+
+% En un primer paso se calcula x = (max-instance? Rule3)
+(max-instance? Ana Rule3)
+(all-instances? Rule3)
+(all-instances? Rule4)
+ 
+% En un segundo paso se añade el axioma (instance Ana Rule3 x)
+(instance Ana Rule3)
+
+% No se usa min-sat, sino el mínimo grado con que una instancia pertenece a cierto concepto
+(min-instance? Ana (some performsActivity MeetingSupervisor) )
+(min-instance? Ana Rule4 )
